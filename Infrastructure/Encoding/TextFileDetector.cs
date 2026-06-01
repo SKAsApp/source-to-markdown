@@ -1,5 +1,6 @@
 // Copilot作成
 using System.Text;
+using TextEncoding = System.Text.Encoding;
 using SourceToMarkdown.Core.Enums;
 using SourceToMarkdown.Core.Interfaces;
 using SourceToMarkdown.Core.Models;
@@ -28,8 +29,8 @@ public sealed class TextFileDetector : ITextFileDetector
 			return new TextDetectionResult { IsText = false, WarningType = WarningType.SkippedEncodingUnknown, Message = "バイナリーファイルの可能性があります。" };
 		}
 
-		Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
-		Encoding? encoding = DetectEncoding(bytes);
+		TextEncoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+		TextEncoding? encoding = DetectEncoding(bytes);
 		if (encoding == null)
 		{
 			return new TextDetectionResult { IsText = false, WarningType = WarningType.SkippedEncodingUnknown, Message = "文字コードを判定できません。" };
@@ -40,7 +41,7 @@ public sealed class TextFileDetector : ITextFileDetector
 	/// <summary>
 	/// バイト列から対応文字コードを推定します。
 	/// </summary>
-	private static Encoding? DetectEncoding(byte[] bytes)
+	private static TextEncoding? DetectEncoding(byte[] bytes)
 	{
 		if (bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF)
 		{
@@ -48,20 +49,20 @@ public sealed class TextFileDetector : ITextFileDetector
 		}
 		if (bytes.Length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xFE)
 		{
-			return Encoding.Unicode;
+			return TextEncoding.Unicode;
 		}
 		if (CanDecode(bytes, new UTF8Encoding(false, true)))
 		{
 			return new UTF8Encoding(false, true);
 		}
-		Encoding shiftJis = Encoding.GetEncoding(932, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
+		TextEncoding shiftJis = TextEncoding.GetEncoding(932, EncoderFallback.ExceptionFallback, DecoderFallback.ExceptionFallback);
 		if (CanDecode(bytes, shiftJis))
 		{
 			return shiftJis;
 		}
-		if (LooksLikeUtf16Le(bytes) && CanDecode(bytes, Encoding.Unicode))
+		if (LooksLikeUtf16Le(bytes) && CanDecode(bytes, TextEncoding.Unicode))
 		{
-			return Encoding.Unicode;
+			return TextEncoding.Unicode;
 		}
 		return null;
 	}
@@ -69,7 +70,7 @@ public sealed class TextFileDetector : ITextFileDetector
 	/// <summary>
 	/// 指定された文字コードでデコード可能かどうかを判定します。
 	/// </summary>
-	private static bool CanDecode(byte[] bytes, Encoding encoding)
+	private static bool CanDecode(byte[] bytes, TextEncoding encoding)
 	{
 		try
 		{

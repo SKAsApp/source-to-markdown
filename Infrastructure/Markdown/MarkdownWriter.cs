@@ -41,11 +41,14 @@ public sealed class MarkdownWriter : IMarkdownWriter
 	{
 		if (this.hasWrittenFileBlock)
 		{
+			this.writer.WriteLine();
 			this.writer.WriteLine("---");
+			this.writer.WriteLine();
 		}
 
 		string fence = ResolveFence(content);
 		this.writer.WriteLine($"`{relativePath}`");
+		this.writer.WriteLine();
 		this.writer.WriteLine($"{fence}{fileType}");
 		this.writer.WriteLine(content);
 		this.writer.WriteLine(fence);

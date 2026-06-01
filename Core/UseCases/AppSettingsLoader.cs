@@ -22,6 +22,6 @@ public sealed class AppSettingsLoader
 
 		string json = File.ReadAllText(path);
 		List<LanguageHintEntry>? entries = JsonSerializer.Deserialize<List<LanguageHintEntry>>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-		return entries ?? Array.Empty<LanguageHintEntry>();
+		return entries is null ? Array.Empty<LanguageHintEntry>() : entries;
 	}
 }

@@ -53,7 +53,7 @@ public sealed class FileCollector : IFileCollector
 	/// </summary>
 	private static bool IsHidden(FileSystemInfo fileSystemInfo)
 	{
-		return fileSystemInfo.Name.StartsWith('.', StringComparison.Ordinal) || fileSystemInfo.Attributes.HasFlag(FileAttributes.Hidden);
+		return fileSystemInfo.Name.StartsWith(".", StringComparison.Ordinal) || fileSystemInfo.Attributes.HasFlag(FileAttributes.Hidden);
 	}
 
 	/// <summary>

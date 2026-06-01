@@ -10,6 +10,7 @@ namespace SourceToMarkdown.Infrastructure.Markdown;
 public sealed class MarkdownWriter : IMarkdownWriter
 {
 	private readonly StreamWriter writer;
+	private bool hasWrittenFileBlock;
 
 	/// <summary>
 	/// Markdown出力先を指定してライターを初期化します。
@@ -38,12 +39,17 @@ public sealed class MarkdownWriter : IMarkdownWriter
 	/// </summary>
 	public void WriteFileBlock(string relativePath, string fileType, string content)
 	{
+		if (this.hasWrittenFileBlock)
+		{
+			this.writer.WriteLine("---");
+		}
+
 		string fence = ResolveFence(content);
 		this.writer.WriteLine($"`{relativePath}`");
 		this.writer.WriteLine($"{fence}{fileType}");
 		this.writer.WriteLine(content);
 		this.writer.WriteLine(fence);
-		this.writer.WriteLine("---");
+		this.hasWrittenFileBlock = true;
 	}
 
 	/// <summary>

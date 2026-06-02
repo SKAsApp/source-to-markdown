@@ -1,4 +1,5 @@
 // Copilot作成
+using Serilog;
 using SourceToMarkdown.Cli.Options;
 using SourceToMarkdown.Cli.Output;
 using SourceToMarkdown.Core.Enums;
@@ -7,6 +8,7 @@ using SourceToMarkdown.Core.UseCases;
 using SourceToMarkdown.Infrastructure.Encoding;
 using SourceToMarkdown.Infrastructure.FileSystem;
 using SourceToMarkdown.Infrastructure.GitIgnore;
+using SourceToMarkdown.Infrastructure.Logging;
 
 namespace SourceToMarkdown;
 
@@ -21,8 +23,13 @@ public static class Program
 	public static int Main(string[] args)
 	{
 		ConsoleResultWriter resultWriter = new ConsoleResultWriter();
+		AppSettingsLoader settingsLoader = new AppSettingsLoader();
+		ApplicationSettings applicationSettings = settingsLoader.LoadApplicationSettings();
+		new SerilogConfigurator().Configure(applicationSettings.Logging);
+
 		try
 		{
+			Log.Information("source-to-markdownを開始します。");
 			CommandLineParser parser = new CommandLineParser();
 			CommandLineOptions options = parser.Parse(args);
 			if (options.ShowHelp)
@@ -47,17 +54,22 @@ public static class Program
 				return (int)ExitCode.ArgumentError;
 			}
 
-			AppSettingsLoader settingsLoader = new AppSettingsLoader();
 			LanguageHintMap languageHintMap = new LanguageHintMap(settingsLoader.LoadLanguageHints(options.LanguageMapPath));
 			SourceToMarkdownUseCase useCase = new SourceToMarkdownUseCase(new FileCollector(), new GitIgnoreRuleEvaluator(), languageHintMap, new TextFileDetector(), new FileContentReader(), new WarningCollector(), new ExitCodeResolver());
 			ProcessingResult result = useCase.Execute(options);
 			resultWriter.WriteResult(result, options);
+			Log.Information("source-to-markdownを終了します。ExitCode={ExitCode}", result.ExitCode);
 			return (int)result.ExitCode;
 		}
 		catch (Exception exception)
 		{
+			Log.Fatal(exception, "致命的なエラーが発生しました。");
 			resultWriter.WriteError(exception.Message);
 			return (int)ExitCode.RuntimeError;
+		}
+		finally
+		{
+			Log.CloseAndFlush();
 		}
 	}
 

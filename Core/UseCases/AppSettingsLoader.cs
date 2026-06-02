@@ -21,6 +21,22 @@ public sealed class AppSettingsLoader
 	}
 
 	/// <summary>
+	/// アプリケーション設定JSONを読み込みます。
+	/// </summary>
+	public ApplicationSettings LoadApplicationSettings()
+	{
+		string path = this.ResolveApplicationSettingsPath();
+		if (!File.Exists(path))
+		{
+			return new ApplicationSettings();
+		}
+
+		string json = File.ReadAllText(path);
+		ApplicationSettings? settings = JsonSerializer.Deserialize<ApplicationSettings>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+		return settings ?? new ApplicationSettings();
+	}
+
+	/// <summary>
 	/// 言語ヒントJSONの読み込みパスを決定します。
 	/// </summary>
 	private string ResolveLanguageMapPath(string? languageMapPath)
@@ -30,18 +46,34 @@ public sealed class AppSettingsLoader
 			return Path.GetFullPath(languageMapPath);
 		}
 
-		string baseDirectoryPath = Path.Combine(AppContext.BaseDirectory, "appsettings.language-map.json");
+		return this.ResolveExistingOrDefaultPath("appsettings.language-map.json");
+	}
+
+	/// <summary>
+	/// アプリケーション設定JSONの読み込みパスを決定します。
+	/// </summary>
+	private string ResolveApplicationSettingsPath()
+	{
+		return this.ResolveExistingOrDefaultPath("appsettings.json");
+	}
+
+	/// <summary>
+	/// 実行ファイル配置先またはカレントディレクトリーから設定ファイルのパスを決定します。
+	/// </summary>
+	private string ResolveExistingOrDefaultPath(string fileName)
+	{
+		string baseDirectoryPath = Path.Combine(AppContext.BaseDirectory, fileName);
 		if (File.Exists(baseDirectoryPath))
 		{
 			return baseDirectoryPath;
 		}
 
-		string currentDirectoryPath = Path.Combine(Environment.CurrentDirectory, "appsettings.language-map.json");
+		string currentDirectoryPath = Path.Combine(Environment.CurrentDirectory, fileName);
 		if (File.Exists(currentDirectoryPath))
 		{
 			return currentDirectoryPath;
 		}
 
-		return "appsettings.language-map.json";
+		return fileName;
 	}
 }

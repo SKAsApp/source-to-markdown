@@ -15,6 +15,17 @@ dotnet run --project source-to-markdown.csproj -- ./src ./output.md --force
 - `--force`: 既存Markdownファイルを確認なしで上書きします。
 - `--help`: ヘルプを表示します。
 
+## ログ
+
+Serilogを使用してコンソールとファイルにログを出力します。設定ファイルでログ出力先を指定しない場合、実行ファイル配置先に `log` ディレクトリーを作成して日次ログを書き出します。
+ログファイルは31世代保持します。標準ではInformation以上を出力し、Debugは出力しません。
+
+## テスト
+
+```bash
+dotnet test Tests/source-to-markdown.Tests/source-to-markdown.Tests.csproj
+```
+
 ## 補足
 
 Markdownのファイル区切りはファイル間のみ `---` を出力し、最後のファイル後には出力しません。

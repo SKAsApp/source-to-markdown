@@ -1,4 +1,5 @@
 // Copilot作成
+using Serilog;
 using SourceToMarkdown.Cli.Options;
 using SourceToMarkdown.Core.Models;
 
@@ -31,9 +32,11 @@ public sealed class ConsoleResultWriter
 		Console.WriteLine($"出力ファイル: {options.OutputMarkdownPath}");
 		Console.WriteLine($"出力ファイル数: {result.WrittenFileCount}");
 		Console.WriteLine($"スキップファイル数: {result.SkippedFileCount}");
+		Log.Information("処理結果を出力しました。Output={OutputMarkdownPath} Written={WrittenFileCount} Skipped={SkippedFileCount}", options.OutputMarkdownPath, result.WrittenFileCount, result.SkippedFileCount);
 		foreach (ProcessingWarning warning in result.Warnings)
 		{
 			Console.Error.WriteLine($"警告: {warning.WarningType} {warning.Path} {warning.Message} {warning.ExceptionMessage}");
+			Log.Warning("警告: Type={WarningType} Path={Path} Message={Message} Exception={ExceptionMessage}", warning.WarningType, warning.Path, warning.Message, warning.ExceptionMessage);
 		}
 	}
 
@@ -43,5 +46,6 @@ public sealed class ConsoleResultWriter
 	public void WriteError(string message)
 	{
 		Console.Error.WriteLine($"エラー: {message}");
+		Log.Error("エラー: {Message}", message);
 	}
 }

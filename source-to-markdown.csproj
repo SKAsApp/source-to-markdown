@@ -10,4 +10,7 @@
 	<ItemGroup>
 		<PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.0" />
 	</ItemGroup>
+	<ItemGroup>
+		<None Include="appsettings.language-map.json" CopyToOutputDirectory="PreserveNewest" />
+	</ItemGroup>
 </Project>

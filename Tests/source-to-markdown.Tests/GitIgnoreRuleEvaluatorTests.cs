@@ -1,6 +1,8 @@
 // Copilot作成
 using SourceToMarkdown.Infrastructure.GitIgnore;
 
+using Xunit;
+
 namespace SourceToMarkdown.Tests;
 
 /// <summary>

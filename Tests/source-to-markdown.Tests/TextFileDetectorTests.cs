@@ -1,6 +1,8 @@
 // Copilot作成
 using SourceToMarkdown.Infrastructure.Encoding;
 
+using Xunit;
+
 namespace SourceToMarkdown.Tests;
 
 /// <summary>

@@ -1,6 +1,8 @@
 // Copilot作成
 using SourceToMarkdown.Infrastructure.Markdown;
 
+using Xunit;
+
 namespace SourceToMarkdown.Tests;
 
 /// <summary>
@@ -24,7 +26,7 @@ public sealed class MarkdownWriterTests
 			}
 
 			string markdown = File.ReadAllText(temporaryFilePath);
-			Assert.DoesNotEndWith("---" + Environment.NewLine, markdown);
+			Assert.False(markdown.TrimEnd().EndsWith("---", StringComparison.Ordinal));
 		}
 		finally
 		{
@@ -53,7 +55,7 @@ public sealed class MarkdownWriterTests
 
 			string markdown = File.ReadAllText(temporaryFilePath);
 			Assert.Contains(Environment.NewLine + "---" + Environment.NewLine, markdown);
-			Assert.DoesNotEndWith("---" + Environment.NewLine, markdown);
+			Assert.False(markdown.TrimEnd().EndsWith("---", StringComparison.Ordinal));
 		}
 		finally
 		{

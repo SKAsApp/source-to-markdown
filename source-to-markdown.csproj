@@ -1,17 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
+
+	<!-- プロジェクト基本設定 -->
 	<PropertyGroup>
-		<OutputType>Exe</OutputType>
 		<TargetFramework>net10.0</TargetFramework>
+		<OutputType>Exe</OutputType>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<Nullable>enable</Nullable>
 		<AssemblyName>source-to-markdown</AssemblyName>
 		<RootNamespace>SourceToMarkdown</RootNamespace>
+		<PublishTrimmed>false</PublishTrimmed>
+		<PublishReadyToRun>true</PublishReadyToRun>
+		<SelfContained>true</SelfContained>
+		<PublishSingleFile>true</PublishSingleFile>
 	</PropertyGroup>
-	<ItemGroup>
-		<Compile Remove="Tests/**/*.cs" />
-		<EmbeddedResource Remove="Tests/**" />
-		<None Remove="Tests/**" />
-	</ItemGroup>
+
+	<!-- ライブラリー -->
 	<ItemGroup>
 		<PackageReference Include="GitignoreParserNet" Version="0.2.0.15" />
 		<PackageReference Include="Serilog" Version="4.3.0" />
@@ -19,8 +22,20 @@
 		<PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
 		<PackageReference Include="System.Text.Encoding.CodePages" Version="10.0.0" />
 	</ItemGroup>
+
+	<!-- ビルド除外 -->
+	<ItemGroup>
+		<Compile Remove="Tests/**/*.cs" />
+		<EmbeddedResource Remove="Tests/**" />
+		<None Remove="Tests/**" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<None Include="appsettings.language-map.json" CopyToOutputDirectory="PreserveNewest" />
 		<None Include="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
+		<!-- <None Include="settings/*" CopyToOutputDirectory="always" /> -->
+		<None Include="README.md" />
+		<None Include="document/*" />
 	</ItemGroup>
+
 </Project>

@@ -287,4 +287,4 @@ source-to-markdown
 
 ## ライセンス
 
-ライセンスはGPL-3.0（GNU GENERAL PUBLIC LICENSE Version 3）です。
+ライセンスはGPL-3.0（GNU General Public License Version 3）です。

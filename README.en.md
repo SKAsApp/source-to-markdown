@@ -1,4 +1,6 @@
-# Source to Markdown
+# Source to Markdown – A Tool for Aggregating  Source Code into A Markdown File for AI Chatbots
+
+[日本語版](./README.md)
 
 `source-to-markdown` is a console application that aggregates source code and configuration files from a specified directory into Markdown files, making them easy to pass to chat-based generative AI tools such as Microsoft 365 Copilot.
 
@@ -22,7 +24,7 @@ It eliminates the hassle of uploading multiple files individually and can be use
 - Does not follow symbolic links
 - Does not include the output Markdown file itself
 - Manages file extension and language hints via a JSON file
-- Supports reading UTF-8, UTF-8 BOM, Shift-JIS and UTF-16 LE
+- Supports reading UTF-8, UTF-8 with BOM, Shift-JIS and UTF-16 LE
 - Normalises line breaks to LF
 - Avoids code fence conflicts (when ``` is present in source code, changes the start of the code block to ~~~)
 - Logs output to a file
@@ -37,11 +39,11 @@ It eliminates the hassle of uploading multiple files individually and can be use
 
 ## Installation
 
-### Pre-built binaries (recommended)
+### Option 1: Pre-built binaries (recommended)
 
 Download the file for your operating system from [Release](https://github.com/SKAsApp/source-to-markdown/releases) and extract it to a location of your choice.
 
-### Building from source
+### Option2: Building from source
 
 Clone the repository.
 
@@ -67,7 +69,7 @@ dotnet publish "./source-to-markdown.csproj" --configuration "Release" --runtime
 For Windows AMD64:
 
 ```powershell
-dotnet.exe publish "./source-to-markdown.csproj" --configuration "Release" --runtime "win-x64"
+dotnet.exe publish ".\source-to-markdown.csproj" --configuration "Release" --runtime "win-x64"
 ```
 
 

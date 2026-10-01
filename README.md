@@ -1,4 +1,6 @@
-# Source to Markdown
+# Source to Markdown for AI Chat – AIチャット向けにソースコードをMarkdownファイルへ集約するやつ
+
+[English ver.](./README.en.md)
 
 `source-to-markdown`は指定ディレクトリー配下のソースコードや設定ファイルを、Microsoft 365 CopilotなどのチャットWeb UIベースの生成AIへ渡しやすいMarkdownファイルへ集約するコンソールアプリです。
 
@@ -22,7 +24,7 @@
 - シンボリックリンクを追跡しない
 - 出力先Markdownファイル自身を取り込まない
 - 拡張子と言語ヒントの対応をJSONファイルで管理
-- UTF-8、UTF-8 BOM、Shift-JIS、UTF-16 LEの読み込みに対応
+- UTF-8、UTF-8 with BOM、Shift-JIS、UTF-16 LEの読み込みに対応
 - 改行コードをLFに正規化
 - コードフェンス衝突を回避（ソースコード内に```があるとき、~~~でのコードブロック開始に変更）
 - ファイルへのログ出力
@@ -37,11 +39,11 @@
 
 ## インストール
 
-### ビルド済みバイナリー（推奨）
+### 方法1：ビルド済みバイナリー（推奨）
 
 [Release](https://github.com/SKAsApp/source-to-markdown/releases)から利用環境のOSのファイルをダウンロードし、任意の場所に展開します。
 
-### 自前ビルドする場合
+### 方法2：自前ビルド
 
 リポジトリーをクローンします。
 
@@ -67,7 +69,7 @@ dotnet publish "./source-to-markdown.csproj" --configuration "Release" --runtime
 Windows AMD64の場合：
 
 ```powershell
-dotnet.exe publish "./source-to-markdown.csproj" --configuration "Release" --runtime "win-x64"
+dotnet.exe publish ".\source-to-markdown.csproj" --configuration "Release" --runtime "win-x64"
 ```
 
 
@@ -82,7 +84,7 @@ source-to-markdown <source-directory> <output-markdown> [options]
 Windowsの場合：
 
 ```powershell
-# コンソール出力文字化け対策
+# コンソール出力の文字化け対策
 [Console]::OutputEncoding = [System.Text.Encoding]::GetEncoding("utf-8")
 # 実行
 source-to-markdown.exe <source-directory> <output-markdown> [options]

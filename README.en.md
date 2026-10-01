@@ -1,4 +1,4 @@
-# Source to Markdown – A Tool for Aggregating  Source Code into A Markdown File for AI Chatbots
+# Source to Markdown for AI Chat – A Tool for Aggregating  Source Code into A Markdown File for AI Chatbots
 
 [日本語版](./README.md)
 

@@ -2,7 +2,7 @@
 
 [English ver.](./README.en.md)
 
-`source-to-markdown`は指定ディレクトリー配下のソースコードや設定ファイルを、Microsoft 365 CopilotなどのチャットWeb UIベースの生成AIへ渡しやすいMarkdownファイルへ集約するコンソールアプリです。
+`source-to-markdown`は指定ディレクトリー配下のソースコードや設定ファイルをMarkdownファイルへ集約し、Microsoft 365 CopilotなどのチャットWeb UIベースの生成AIへ渡しやすくする.NET製のコンソールアプリです。
 
 複数ファイルを個別にアップロードする手間を減らし、ディレクトリー構成を含めたプロジェクト全体のコードを添付したい場面で利用できます。
 

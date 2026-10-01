@@ -2,7 +2,7 @@
 
 [日本語版](./README.md)
 
-`source-to-markdown` is a console application that aggregates source code and configuration files from a specified directory into Markdown files, making them easy to pass to chat-based generative AI tools such as Microsoft 365 Copilot.
+`source-to-markdown` is a .NET console application that aggregates source code and configuration files from a specified directory into Markdown files, making them easier to pass to chat-based, web UI-driven generative AI tools such as Microsoft 365 Copilot.
 
 It eliminates the hassle of uploading multiple files individually and can be used when you wish to attach the entire project’s code, including its directory structure.
 

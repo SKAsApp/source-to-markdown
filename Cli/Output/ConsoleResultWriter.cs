@@ -13,10 +13,10 @@ public sealed class ConsoleResultWriter
 	/// <summary>
 	/// ヘルプメッセージを表示します。
 	/// </summary>
-	public void WriteHelp()
+	public void WriteHelp( )
 	{
-		Console.WriteLine("source-to-markdown <source-directory> <output-markdown> [options]");
-		Console.WriteLine("Options:");
+		Console.WriteLine("source-to-markdown <input-path> <output-path> [options]");
+		Console.WriteLine("  --reverse              Markdownからディレクトリーを復元します。");
 		Console.WriteLine("  --language-map <path>  拡張子と言語ヒントの対応JSONを指定します。");
 		Console.WriteLine("  --verbose              詳細ログを表示します。");
 		Console.WriteLine("  --force                既存ファイルを確認なしで上書きします。");
@@ -24,25 +24,41 @@ public sealed class ConsoleResultWriter
 	}
 
 	/// <summary>
-	/// 処理結果を表示します。
+	/// 集約処理結果を表示します。
 	/// </summary>
+	/// <param name="result">集約処理結果</param>
+	/// <param name="options">実行オプション</param>
 	public void WriteResult(ProcessingResult result, CommandLineOptions options)
 	{
 		Console.WriteLine("処理が完了しました。");
-		Console.WriteLine($"出力ファイル: {options.OutputMarkdownPath}");
+		Console.WriteLine($"出力ファイル: {options.OutputPath}");
 		Console.WriteLine($"出力ファイル数: {result.WrittenFileCount}");
 		Console.WriteLine($"スキップファイル数: {result.SkippedFileCount}");
-		Log.Information("処理結果を出力しました。Output={OutputMarkdownPath} Written={WrittenFileCount} Skipped={SkippedFileCount}", options.OutputMarkdownPath, result.WrittenFileCount, result.SkippedFileCount);
+		Console.WriteLine($"既定除外ファイル数: {result.DefaultExcludedFileCount}");
+		Console.WriteLine($".gitignore除外ファイル数: {result.GitIgnoreExcludedFileCount}");
 		foreach (ProcessingWarning warning in result.Warnings)
 		{
 			Console.Error.WriteLine($"警告: {warning.WarningType} {warning.Path} {warning.Message} {warning.ExceptionMessage}");
-			Log.Warning("警告: Type={WarningType} Path={Path} Message={Message} Exception={ExceptionMessage}", warning.WarningType, warning.Path, warning.Message, warning.ExceptionMessage);
 		}
+	}
+
+	/// <summary>
+	/// 復元処理結果を表示します。
+	/// </summary>
+	/// <param name="result">復元処理結果</param>
+	/// <param name="options">実行オプション</param>
+	public void WriteReverseResult(MarkdownToSourceResult result, CommandLineOptions options)
+	{
+		Console.WriteLine("復元処理が完了しました。");
+		Console.WriteLine($"入力Markdown: {options.InputPath}");
+		Console.WriteLine($"復元先ディレクトリー: {options.OutputPath}");
+		Console.WriteLine($"復元ファイル数: {result.RestoredFileCount}");
 	}
 
 	/// <summary>
 	/// エラーメッセージを表示します。
 	/// </summary>
+	/// <param name="message">エラーメッセージ</param>
 	public void WriteError(string message)
 	{
 		Console.Error.WriteLine($"エラー: {message}");

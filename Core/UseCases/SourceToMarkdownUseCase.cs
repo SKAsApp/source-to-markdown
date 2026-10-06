@@ -13,18 +13,40 @@ namespace SourceToMarkdown.Core.UseCases;
 /// </summary>
 public sealed class SourceToMarkdownUseCase
 {
+	/// <summary>処理可能な最大ファイルサイズ</summary>
 	private const long MaxFileSizeBytes = 50L * 1024L * 1024L;
+
+	/// <summary>候補ファイルを収集する機能</summary>
 	private readonly IFileCollector fileCollector;
+
+	/// <summary>除外規則を評価する機能</summary>
 	private readonly IIgnoreRuleEvaluator ignoreRuleEvaluator;
+
+	/// <summary>言語ヒントを取得する機能</summary>
 	private readonly ILanguageHintMap languageHintMap;
+
+	/// <summary>テキストファイルを判定する機能</summary>
 	private readonly ITextFileDetector textFileDetector;
+
+	/// <summary>ファイル本文を読み込む機能</summary>
 	private readonly IFileContentReader fileContentReader;
+
+	/// <summary>警告を収集する機能</summary>
 	private readonly WarningCollector warningCollector;
+
+	/// <summary>終了コードを決定する機能</summary>
 	private readonly ExitCodeResolver exitCodeResolver;
 
 	/// <summary>
 	/// 必要な依存機能を受け取り、ユースケースを初期化します。
 	/// </summary>
+	/// <param name="fileCollector">候補ファイルを収集する機能</param>
+	/// <param name="ignoreRuleEvaluator">除外規則を評価する機能</param>
+	/// <param name="languageHintMap">言語ヒントを取得する機能</param>
+	/// <param name="textFileDetector">テキストファイルを判定する機能</param>
+	/// <param name="fileContentReader">ファイル本文を読み込む機能</param>
+	/// <param name="warningCollector">警告を収集する機能</param>
+	/// <param name="exitCodeResolver">終了コードを決定する機能</param>
 	public SourceToMarkdownUseCase(IFileCollector fileCollector, IIgnoreRuleEvaluator ignoreRuleEvaluator, ILanguageHintMap languageHintMap, ITextFileDetector textFileDetector, IFileContentReader fileContentReader, WarningCollector warningCollector, ExitCodeResolver exitCodeResolver)
 	{
 		this.fileCollector = fileCollector;
@@ -39,37 +61,39 @@ public sealed class SourceToMarkdownUseCase
 	/// <summary>
 	/// 指定されたオプションに従ってMarkdown集約処理を実行します。
 	/// </summary>
+	/// <param name="options">実行オプション</param>
+	/// <returns>集約処理結果</returns>
 	public ProcessingResult Execute(CommandLineOptions options)
 	{
 		int writtenFileCount = 0;
 		int skippedFileCount = 0;
-		Log.Information("Markdown集約処理を開始します。SourceDirectory={SourceDirectory} OutputMarkdown={OutputMarkdown}", options.SourceDirectoryPath, options.OutputMarkdownPath);
-		using IMarkdownWriter markdownWriter = new MarkdownWriter(options.OutputMarkdownPath);
-		markdownWriter.WriteHeader(options.SourceDirectoryPath);
-
-		foreach (FileCandidate candidate in this.fileCollector.Collect(options.SourceDirectoryPath, options.OutputMarkdownPath))
+		int defaultExcludedFileCount = 0;
+		int gitIgnoreExcludedFileCount = 0;
+		using IMarkdownWriter markdownWriter = new MarkdownWriter(options.OutputPath);
+		markdownWriter.WriteHeader(options.InputPath);
+		foreach (FileCandidate candidate in this.fileCollector.Collect(options.InputPath, options.OutputPath))
 		{
-			this.WriteVerbose(options, $"処理中: {candidate.RelativePath}");
-			Log.Debug("ファイル処理を開始します。Path={RelativePath}", candidate.RelativePath);
-			IgnoreDecision ignoreDecision = this.ignoreRuleEvaluator.Evaluate(options.SourceDirectoryPath, candidate.RelativePath);
+			IgnoreDecision ignoreDecision = this.ignoreRuleEvaluator.Evaluate(options.InputPath, candidate.RelativePath);
 			if (ignoreDecision.IsIgnored)
 			{
 				skippedFileCount++;
-				this.warningCollector.Add(ignoreDecision.WarningType ?? WarningType.SkippedByIgnoreRule, candidate.RelativePath, ignoreDecision.Reason);
+				if (ignoreDecision.WarningType == WarningType.SkippedDefaultExcludedDirectory)
+				{
+					defaultExcludedFileCount++;
+				}
+				else if (ignoreDecision.WarningType == WarningType.SkippedByIgnoreRule)
+				{
+					gitIgnoreExcludedFileCount++;
+				}
+				else
+				{
+					// 除外種別が不明な場合は、正常な.gitignore除外として扱わず確認対象の警告にします。
+					this.warningCollector.Add(ignoreDecision.WarningType ?? WarningType.SkippedEncodingUnknown, candidate.RelativePath, ignoreDecision.Reason);
+				}
 				this.WriteVerbose(options, $"スキップ: {candidate.RelativePath} 理由: {ignoreDecision.Reason}");
 				Log.Information("ファイルをスキップしました。Path={RelativePath} Reason={Reason}", candidate.RelativePath, ignoreDecision.Reason);
 				continue;
 			}
-
-			if (!this.languageHintMap.TryGetFileType(candidate.RelativePath, out string fileType))
-			{
-				skippedFileCount++;
-				this.warningCollector.Add(WarningType.SkippedUnknownExtension, candidate.RelativePath, "未知の拡張子です。");
-				this.WriteVerbose(options, $"スキップ: {candidate.RelativePath} 理由: 未知の拡張子です。");
-				Log.Information("未知の拡張子のためスキップしました。Path={RelativePath}", candidate.RelativePath);
-				continue;
-			}
-
 			try
 			{
 				TextDetectionResult detectionResult = this.textFileDetector.Detect(candidate.FullPath, MaxFileSizeBytes);
@@ -77,42 +101,43 @@ public sealed class SourceToMarkdownUseCase
 				{
 					skippedFileCount++;
 					this.warningCollector.Add(detectionResult.WarningType ?? WarningType.SkippedEncodingUnknown, candidate.RelativePath, detectionResult.Message);
-					this.WriteVerbose(options, $"スキップ: {candidate.RelativePath} 理由: {detectionResult.Message}");
-					Log.Information("テキスト判定によりスキップしました。Path={RelativePath} Reason={Reason}", candidate.RelativePath, detectionResult.Message);
 					continue;
 				}
-
-				this.WriteVerbose(options, $"採用文字コード: {candidate.RelativePath} {detectionResult.Encoding.EncodingName}");
-				this.WriteVerbose(options, $"採用言語ヒント: {candidate.RelativePath} {fileType}");
-				Log.Debug("ファイルを書き出します。Path={RelativePath} Encoding={Encoding} FileType={FileType}", candidate.RelativePath, detectionResult.Encoding.EncodingName, fileType);
+				string fileType = string.Empty;
+				this.languageHintMap.TryGetFileType(candidate.RelativePath, out fileType);
 				string content = this.fileContentReader.ReadAllTextNormalized(candidate.FullPath, detectionResult.Encoding);
-				markdownWriter.WriteFileBlock(candidate.RelativePath, fileType, content);
+				markdownWriter.WriteFileBlock(candidate.RelativePath, fileType ?? string.Empty, content);
 				writtenFileCount++;
 			}
 			catch (Exception exception) when (exception is IOException || exception is UnauthorizedAccessException)
 			{
 				skippedFileCount++;
 				this.warningCollector.Add(WarningType.SkippedUnreadable, candidate.RelativePath, "ファイルを読み取れません。", exception);
-				this.WriteVerbose(options, $"スキップ: {candidate.RelativePath} 理由: ファイルを読み取れません。 {exception.Message}");
-				Log.Warning(exception, "ファイルを読み取れないためスキップしました。Path={RelativePath}", candidate.RelativePath);
 			}
 		}
-
 		IReadOnlyList<ProcessingWarning> warnings = this.warningCollector.GetWarnings();
-		Log.Information("Markdown集約処理を終了します。Written={WrittenFileCount} Skipped={SkippedFileCount} WarningCount={WarningCount}", writtenFileCount, skippedFileCount, warnings.Count);
-		return new ProcessingResult { WrittenFileCount = writtenFileCount, SkippedFileCount = skippedFileCount, Warnings = warnings, ExitCode = this.exitCodeResolver.Resolve(warnings.Count > 0) };
+		return new ProcessingResult
+		{
+			WrittenFileCount = writtenFileCount,
+			SkippedFileCount = skippedFileCount,
+			DefaultExcludedFileCount = defaultExcludedFileCount,
+			GitIgnoreExcludedFileCount = gitIgnoreExcludedFileCount,
+			Warnings = warnings,
+			ExitCode = this.exitCodeResolver.Resolve(warnings.Count > 0)
+		};
 	}
 
 	/// <summary>
-	/// verbose指定時に詳細ログを標準エラーへ出力します。
+	/// 詳細表示が有効な場合にメッセージを出力します。
 	/// </summary>
+	/// <param name="options">実行オプション</param>
+	/// <param name="message">表示メッセージ</param>
 	private void WriteVerbose(CommandLineOptions options, string message)
 	{
 		if (!options.Verbose)
 		{
 			return;
 		}
-
 		Console.Error.WriteLine($"詳細: {message}");
 	}
 }

@@ -9,7 +9,7 @@ using SourceToMarkdown.Infrastructure.Encoding;
 using SourceToMarkdown.Infrastructure.FileSystem;
 using SourceToMarkdown.Infrastructure.GitIgnore;
 using SourceToMarkdown.Infrastructure.Logging;
-
+using SourceToMarkdown.Infrastructure.Markdown;
 namespace SourceToMarkdown;
 
 /// <summary>
@@ -18,48 +18,34 @@ namespace SourceToMarkdown;
 public static class Program
 {
 	/// <summary>
-	/// コマンドライン引数を受け取り、Markdown集約処理を実行します。
+	/// コマンドライン引数を受け取り、指定されたモードを実行します。
 	/// </summary>
+	/// <param name="args">コマンドライン引数</param>
+	/// <returns>終了コード</returns>
 	public static int Main(string[] args)
 	{
 		ConsoleResultWriter resultWriter = new ConsoleResultWriter();
 		AppSettingsLoader settingsLoader = new AppSettingsLoader();
-		ApplicationSettings applicationSettings = settingsLoader.LoadApplicationSettings();
-		new SerilogConfigurator().Configure(applicationSettings.Logging);
-
+		new SerilogConfigurator().Configure(settingsLoader.LoadApplicationSettings().Logging);
 		try
 		{
-			Log.Information("source-to-markdownを開始します。");
-			CommandLineParser parser = new CommandLineParser();
-			CommandLineOptions options = parser.Parse(args);
+			CommandLineOptions options = new CommandLineParser().Parse(args);
 			if (options.ShowHelp)
 			{
-				resultWriter.WriteHelp();
+				resultWriter.WriteHelp( );
 				return (int)ExitCode.Success;
 			}
-			if (string.IsNullOrWhiteSpace(options.SourceDirectoryPath) || string.IsNullOrWhiteSpace(options.OutputMarkdownPath))
+			if (!string.IsNullOrWhiteSpace(options.ParseErrorMessage))
 			{
-				resultWriter.WriteError("入力ディレクトリーと出力Markdownファイルを指定してください。");
-				resultWriter.WriteHelp();
+				resultWriter.WriteError(options.ParseErrorMessage);
+				resultWriter.WriteHelp( );
 				return (int)ExitCode.ArgumentError;
 			}
-			if (!Directory.Exists(options.SourceDirectoryPath))
+			if (options.Reverse)
 			{
-				resultWriter.WriteError("入力ディレクトリーが存在しません。");
-				return (int)ExitCode.ArgumentError;
+				return ExecuteReverseMode(options, resultWriter);
 			}
-			if (File.Exists(options.OutputMarkdownPath) && !options.Force && !ConfirmOverwrite(options.OutputMarkdownPath))
-			{
-				resultWriter.WriteError("上書きが拒否されました。");
-				return (int)ExitCode.ArgumentError;
-			}
-
-			LanguageHintMap languageHintMap = new LanguageHintMap(settingsLoader.LoadLanguageHints(options.LanguageMapPath));
-			SourceToMarkdownUseCase useCase = new SourceToMarkdownUseCase(new FileCollector(), new GitIgnoreRuleEvaluator(), languageHintMap, new TextFileDetector(), new FileContentReader(), new WarningCollector(), new ExitCodeResolver());
-			ProcessingResult result = useCase.Execute(options);
-			resultWriter.WriteResult(result, options);
-			Log.Information("source-to-markdownを終了します。ExitCode={ExitCode}", result.ExitCode);
-			return (int)result.ExitCode;
+			return ExecuteForwardMode(options, resultWriter, settingsLoader);
 		}
 		catch (Exception exception)
 		{
@@ -74,8 +60,60 @@ public static class Program
 	}
 
 	/// <summary>
+	/// 通常モードを実行します。
+	/// </summary>
+	/// <param name="options">実行オプション</param>
+	/// <param name="resultWriter">結果出力機能</param>
+	/// <param name="settingsLoader">設定読み込み機能</param>
+	/// <returns>終了コード</returns>
+	private static int ExecuteForwardMode(CommandLineOptions options, ConsoleResultWriter resultWriter, AppSettingsLoader settingsLoader)
+	{
+		if (!Directory.Exists(options.InputPath))
+		{
+			resultWriter.WriteError("入力ディレクトリーが存在しません。");
+			return (int)ExitCode.ArgumentError;
+		}
+		if (File.Exists(options.OutputPath) && !options.Force && !ConfirmOverwrite(options.OutputPath))
+		{
+			resultWriter.WriteError("上書きが拒否されました。");
+			return (int)ExitCode.ArgumentError;
+		}
+		LanguageHintMap languageHintMap = new LanguageHintMap(settingsLoader.LoadLanguageHints(options.LanguageMapPath));
+		SourceToMarkdownUseCase useCase = new SourceToMarkdownUseCase(new FileCollector(), new GitIgnoreRuleEvaluator(), languageHintMap, new TextFileDetector(), new FileContentReader(), new WarningCollector(), new ExitCodeResolver());
+		ProcessingResult result = useCase.Execute(options);
+		resultWriter.WriteResult(result, options);
+		return (int)result.ExitCode;
+	}
+
+	/// <summary>
+	/// 逆モードを実行します。
+	/// </summary>
+	/// <param name="options">実行オプション</param>
+	/// <param name="resultWriter">結果出力機能</param>
+	/// <returns>終了コード</returns>
+	private static int ExecuteReverseMode(CommandLineOptions options, ConsoleResultWriter resultWriter)
+	{
+		if (!File.Exists(options.InputPath))
+		{
+			resultWriter.WriteError("入力Markdownファイルが存在しません。");
+			return (int)ExitCode.ArgumentError;
+		}
+		if (File.Exists(options.OutputPath))
+		{
+			resultWriter.WriteError("復元先にはディレクトリーを指定してください。");
+			return (int)ExitCode.ArgumentError;
+		}
+		MarkdownToSourceUseCase useCase = new MarkdownToSourceUseCase(new MarkdownRepositoryParser());
+		MarkdownToSourceResult result = useCase.Execute(options);
+		resultWriter.WriteReverseResult(result, options);
+		return (int)result.ExitCode;
+	}
+
+	/// <summary>
 	/// 既存の出力Markdownファイルを上書きしてよいか確認します。
 	/// </summary>
+	/// <param name="outputMarkdownPath">出力Markdownファイルのパス</param>
+	/// <returns>上書きを許可する場合はtrue</returns>
 	private static bool ConfirmOverwrite(string outputMarkdownPath)
 	{
 		Console.Write($"出力ファイルが既に存在します。上書きしますか？ [y/N]: {outputMarkdownPath} ");
